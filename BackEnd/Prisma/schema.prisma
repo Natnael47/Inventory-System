@@ -1,0 +1,25 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model inventory {
+    id              Int       @id @default(autoincrement()) // Unique identifier for each inventory item
+    name            String    @unique @db.VarChar(255) // Name of the inventory item
+    category        String    @db.VarChar(100) // Category of the inventory item
+    description     String?   @db.VarChar(500) // Optional description
+    quantity        Int       @default(0) // Current quantity
+    unit            String    @db.VarChar(50) // Unit of measurement
+    pricePerUnit    Float? // Price per unit
+    status          String?   @db.VarChar(50) // Optional status
+    dateReceived    DateTime  @default(now()) // Date received
+    dateUpdated     DateTime  @default(now()) @updatedAt // Date last updated
+    expiryDate      DateTime? // Optional expiry date
+    image           String?   @db.VarChar(255) // Optional image
+    initialQuantity Int?      @default(0) // Initial quantity
+    supplierId      Int? // Foreign key to supplier
+}
