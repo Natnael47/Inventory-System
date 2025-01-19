@@ -7,19 +7,143 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model inventory {
-    id              Int       @id @default(autoincrement()) // Unique identifier for each inventory item
-    name            String    @unique @db.VarChar(255) // Name of the inventory item
-    category        String    @db.VarChar(100) // Category of the inventory item
-    description     String?   @db.VarChar(500) // Optional description
-    quantity        Int       @default(0) // Current quantity
-    unit            String    @db.VarChar(50) // Unit of measurement
-    pricePerUnit    Float? // Price per unit
-    status          String?   @db.VarChar(50) // Optional status
-    dateReceived    DateTime  @default(now()) // Date received
-    dateUpdated     DateTime  @default(now()) @updatedAt // Date last updated
-    expiryDate      DateTime? // Optional expiry date
-    image           String?   @db.VarChar(255) // Optional image
-    initialQuantity Int?      @default(0) // Initial quantity
-    supplierId      Int? // Foreign key to supplier
+// Inventory Table
+model Inventory {
+    Inventory_Id           Int       @id @default(autoincrement())
+    Product_Name           String    @unique @db.VarChar(255)
+    Product_Category       String    @db.VarChar(100)
+    Product_Description    String?   @db.VarChar(500)
+    Is_Discontinued        Boolean   @default(false)
+    Stock_Quantity         Int       @default(0)
+    Reorder_Threshold      Int?
+    Total_Value            Float?
+    Unit_Of_Measurement    String    @db.VarChar(50)
+    Unit_Price             Float?
+    Stock_Status           String?   @db.VarChar(50)
+    Storage_Location       String?   @db.VarChar(255)
+    Expiry_Date            DateTime?
+    Initial_Stock_Quantity Int?      @default(0)
+    Supplier_Id            Int?
+    createdAt              DateTime  @default(now()) // Timestamp of record creation
+    updatedAt              DateTime? @updatedAt // Automatically updated timestamp for modifications
+
+    Supplier            Supplier?           @relation(fields: [Supplier_Id], references: [Supplier_Id])
+    Inventory_Purchases InventoryPurchase[]
+    Withdrawal_Logs     WithdrawalLog[]
+    Stock_Batches       StockBatch[]
+
+    @@map("inventory")
+}
+
+// Withdrawal Log Table
+model WithdrawalLog {
+    WithdrawalLog_Id   Int       @id @default(autoincrement())
+    Inventory_Id       Int
+    Employee_Id        Int?
+    Withdrawal_Reason  String?
+    Quantity_Withdrawn Int
+    Date_Withdrawn     DateTime  @default(now())
+    updatedAt          DateTime? @updatedAt // Automatically updated timestamp for modifications
+
+    Inventory Inventory @relation(fields: [Inventory_Id], references: [Inventory_Id])
+    Employee  Employee? @relation(fields: [Employee_Id], references: [Employee_Id])
+
+    @@map("withdrawal_log")
+}
+
+// Inventory Purchase Table
+model InventoryPurchase {
+    Purchase_Id        Int       @id @default(autoincrement())
+    Inventory_Id       Int
+    Employee_Id        Int?
+    Supplier_Id        Int?
+    Purchase_Date      DateTime  @default(now())
+    Quantity_Purchased Int
+    Total_Cost         Float?
+    Unit_Price         Float?
+    createdAt          DateTime  @default(now()) // Timestamp of record creation
+    updatedAt          DateTime? @updatedAt // Automatically updated timestamp for modifications
+
+    Inventory Inventory @relation(fields: [Inventory_Id], references: [Inventory_Id])
+    Supplier  Supplier? @relation(fields: [Supplier_Id], references: [Supplier_Id])
+    Employee  Employee? @relation(fields: [Employee_Id], references: [Employee_Id])
+
+    @@map("inventory_purchase")
+}
+
+// Stock Batch Table
+model StockBatch {
+    StockBatch_Id      Int       @id @default(autoincrement())
+    Batch_Number       String    @unique @db.VarChar(50)
+    Inventory_Id       Int
+    Supplier_Id        Int?
+    Purchase_Date      DateTime  @default(now())
+    Quantity_Purchased Int
+    Unit_Price         Float
+    Expiry_Date        DateTime?
+    Remaining_Quantity Int
+    createdAt          DateTime  @default(now()) // Timestamp of record creation
+    updatedAt          DateTime? @updatedAt // Automatically updated timestamp for modifications
+
+    Inventory Inventory @relation(fields: [Inventory_Id], references: [Inventory_Id])
+    Supplier  Supplier? @relation(fields: [Supplier_Id], references: [Supplier_Id])
+
+    @@map("stock_batch")
+}
+
+// Supplier Table
+model Supplier {
+    Supplier_Id          Int       @id @default(autoincrement())
+    Supplier_Name        String    @db.VarChar(255)
+    Contact_Name         String?   @db.VarChar(255)
+    Contact_Phone_Number String?   @db.VarChar(15)
+    Contact_Email        String?   @unique @db.VarChar(255)
+    Notes                String?   @db.Text
+    createdAt            DateTime  @default(now()) // Timestamp of record creation
+    updatedAt            DateTime? @updatedAt // Automatically updated timestamp for modifications
+
+    Supplied_Products      Inventory[]
+    Supplied_Stock_Batches StockBatch[]
+    Supplied_Purchases     InventoryPurchase[]
+
+    @@map("supplier")
+}
+
+// Employee Table
+model Employee {
+    Employee_Id       Int       @id @default(autoincrement())
+    First_Name        String    @db.VarChar(255)
+    Last_Name         String    @db.VarChar(255)
+    Gender            String    @db.VarChar(50)
+    Email             String    @unique @db.VarChar(255)
+    Password          String    @db.VarChar(255)
+    Profile_Image     String?   @db.VarChar(255)
+    Phone_Number      String    @db.VarChar(20)
+    Job_Position      String    @db.VarChar(100)
+    Work_Shift        String    @db.VarChar(100)
+    Education_Details String    @db.VarChar(255)
+    Work_Experience   String    @db.VarChar(255)
+    Monthly_Salary    Float     @db.Float
+    Address           Json
+    About_Employee    String?   @db.Text
+    createdAt         DateTime  @default(now()) // Timestamp of record creation
+    updatedAt         DateTime? @updatedAt // Automatically updated timestamp for modifications
+
+    Inventory_Packages InventoryPurchase[]
+    Withdrawal_Logs    WithdrawalLog[]
+    Work_Logs          WorkLog[]
+
+    @@map("employee")
+}
+
+// Work Log Table
+model WorkLog {
+    WorkLog_Id  Int       @id @default(autoincrement())
+    Employee_Id Int
+    Login_Time  DateTime  @default(now())
+    Logout_Time DateTime?
+
+    Employee Employee @relation(fields: [Employee_Id], references: [Employee_Id])
+
+    @@map("work_log")
 }
